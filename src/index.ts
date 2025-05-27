@@ -7,6 +7,7 @@ import { join } from 'path'
 import {
   type Routine,
   createRoutine,
+  loadRoutines,
 } from "./routine"
 
 const server = new McpServer({
@@ -17,6 +18,8 @@ const server = new McpServer({
     tools: {},
   },
 })
+
+const routineFilename = process.env.TOOL_FILENAME ?? join(process.cwd(), "routines.json")
 
 server.tool(
   "create-routine",
@@ -33,9 +36,8 @@ server.tool(
     ),
   },
   async ({ name, description, steps }) => {
-    const filename = process.env.TOOL_FILENAME ?? join(process.cwd(), "routines.json")
     await createRoutine({
-      filename,
+      filename: routineFilename,
       routine: { name, description, steps },
     })
 
@@ -49,6 +51,31 @@ server.tool(
     }
   }
 )
+
+const routines = await loadRoutines(routineFilename)
+
+// Load all routines as MCP tools.
+for (let routine of routines) {
+  server.tool(
+    routine.name,
+    routine.description,
+    {},
+    () => {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `
+              Perform the following steps by calling the right MCP tools as specified in the steps below.\n
+              The provided params are only examples. DO NOT assume they are the user inputs, request user to supply the params.\n
+              ${JSON.stringify(routine, null, 2)}
+            `
+          }
+        ]
+      }
+    }
+  )
+}
 
 async function main() {
   const transport = new StdioServerTransport()

@@ -1,74 +1,160 @@
-import {
-  createRoutine
-} from "../src/routine"
-import { promises as fs } from 'fs';
-import path from 'path';
+import { promises as fs } from 'fs'
+import { createRoutine, loadRoutines, Routine } from '../src/routine'
 
-describe("createRoutine", () => {
-  const testFilePath = "tests/tmp.json";
-  
-  // Clean up test file after tests
-  afterEach(async () => {
-    try {
-      await fs.unlink(testFilePath);
-    } catch (error) {
-      // Ignore if file doesn't exist
-    }
-  });
+// Mock fs module
+jest.mock('fs', () => ({
+  promises: {
+    writeFile: jest.fn(),
+    readFile: jest.fn()
+  }
+}))
 
-  it("creates a routine file with the correct structure", async () => {
-    const routine = {
-      "name": "create_subpage_in_getting_started",
-      "description": "Creates a new page under the Getting Started page. This routine first searches for the Getting Started page to get its ID, then creates a new page with the specified title as a subpage. The routine demonstrates how to create a hierarchical page structure.",
-      "steps": [
-        {
-          "tool": "mcp_Api_API-post-search",
-          "params": {
-            "query": "Getting started"
-          },
-          "description": "Search for the Getting Started page to obtain its page ID"
-        },
-        {
-          "tool": "mcp_Api_API-post-page",
-          "params": {
-            "parent": {
-              "page_id": "264eee3b-b5a1-4c45-9ef3-194a7d48988c"
-            },
-            "properties": {
-              "title": [
-                {
-                  "text": {
-                    "content": "First day"
-                  }
-                }
-              ]
-            }
-          },
-          "description": "Create a new subpage titled 'First day' under the Getting Started page using the parent page ID"
-        }
-      ]
-    };
+describe('Routine functions', () => {
+  const mockRoutine: Routine = {
+    name: 'Test Routine',
+    description: 'A test routine',
+    steps: [
+      {
+        description: 'Test step',
+        tool: 'test-tool',
+        params: { param1: 'value1' }
+      }
+    ]
+  }
 
-    await createRoutine({ routine, filename: testFilePath });
+  const testFilename = 'test-routines.json'
 
-    // Verify the file was created and check its contents
-    const fileContent = await fs.readFile(testFilePath, 'utf-8');
-    const parsedContent = JSON.parse(fileContent);
-    expect(parsedContent).toEqual(routine);
-  });
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
 
-  it("throws an error when routine is invalid", async () => {
-    const invalidRoutine = {
-      name: "invalid_routine",
-      // Missing required fields like description and steps
-    };
+  describe('createRoutine', () => {
+    it('should successfully create a routine when file is empty', async () => {
+      // Mock file not found error
+      (fs.readFile as jest.Mock).mockRejectedValue({ code: 'ENOENT' })
 
-    // The function should validate the routine structure
-    await expect(async () => {
-      await createRoutine({ 
-        routine: invalidRoutine as any, 
-        filename: testFilePath 
-      });
-    }).rejects.toThrow();
-  });
+      await createRoutine({ routine: mockRoutine, filename: testFilename })
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        testFilename,
+        JSON.stringify([mockRoutine], null, 2)
+      )
+    })
+
+    it('should append routine to existing routines', async () => {
+      const existingRoutines: Routine[] = [{
+        name: 'Existing Routine',
+        description: 'An existing routine',
+        steps: [{ description: 'Step 1', tool: 'tool-1', params: {} }]
+      }]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(existingRoutines))
+
+      await createRoutine({ routine: mockRoutine, filename: testFilename })
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        testFilename,
+        JSON.stringify([...existingRoutines, mockRoutine], null, 2)
+      )
+    })
+
+    it('should throw error if routine name already exists', async () => {
+      const existingRoutines: Routine[] = [{ ...mockRoutine }]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(existingRoutines))
+
+      await expect(
+        createRoutine({ routine: mockRoutine, filename: testFilename })
+      ).rejects.toThrow('A routine with name "Test Routine" already exists')
+    })
+
+    it('should throw error if file content is not an array', async () => {
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify({}))
+
+      await expect(
+        createRoutine({ routine: mockRoutine, filename: testFilename })
+      ).rejects.toThrow('Existing file content must be an array of routines')
+    })
+
+    it('should throw error if file read fails with unexpected error', async () => {
+      ;(fs.readFile as jest.Mock).mockRejectedValue(new Error('Permission denied'))
+
+      await expect(
+        createRoutine({ routine: mockRoutine, filename: testFilename })
+      ).rejects.toThrow('Failed to create routine: Permission denied')
+    })
+
+    it('should throw error if routine name is missing', async () => {
+      const invalidRoutine = { ...mockRoutine, name: '' }
+      await expect(
+        createRoutine({ routine: invalidRoutine, filename: testFilename })
+      ).rejects.toThrow('Routine must have a valid name')
+    })
+
+    it('should throw error if routine description is missing', async () => {
+      const invalidRoutine = { ...mockRoutine, description: '' }
+      await expect(
+        createRoutine({ routine: invalidRoutine, filename: testFilename })
+      ).rejects.toThrow('Routine must have a valid description')
+    })
+
+    it('should throw error if steps array is empty', async () => {
+      const invalidRoutine = { ...mockRoutine, steps: [] }
+      await expect(
+        createRoutine({ routine: invalidRoutine, filename: testFilename })
+      ).rejects.toThrow('Routine must have at least one step')
+    })
+
+    it('should throw error if step is invalid', async () => {
+      const invalidRoutine = {
+        ...mockRoutine,
+        steps: [{ description: '', tool: 'test-tool', params: {} }]
+      }
+      await expect(
+        createRoutine({ routine: invalidRoutine, filename: testFilename })
+      ).rejects.toThrow('Each step must have a valid description')
+    })
+  })
+
+  describe('loadRoutines', () => {
+    it('should successfully load routines', async () => {
+      const mockData = [mockRoutine]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(mockData))
+
+      const result = await loadRoutines(testFilename)
+      expect(result).toEqual(mockData)
+      expect(fs.readFile).toHaveBeenCalledWith(testFilename, 'utf-8')
+    })
+
+    it('should throw error if file content is not an array', async () => {
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify({}))
+
+      await expect(loadRoutines(testFilename)).rejects.toThrow(
+        'File content must be an array of routines'
+      )
+    })
+
+    it('should throw error if routine in file is invalid', async () => {
+      const mockData = [{ ...mockRoutine, name: '' }]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(mockData))
+
+      await expect(loadRoutines(testFilename)).rejects.toThrow(
+        'Each routine must have a valid name'
+      )
+    })
+
+    it('should throw error if file content is not valid JSON', async () => {
+      ;(fs.readFile as jest.Mock).mockResolvedValue('invalid json')
+
+      await expect(loadRoutines(testFilename)).rejects.toThrow(
+        'Failed to load routines: Unexpected token'
+      )
+    })
+
+    it('should throw error if file read fails', async () => {
+      ;(fs.readFile as jest.Mock).mockRejectedValue(new Error('File not found'))
+
+      await expect(loadRoutines(testFilename)).rejects.toThrow(
+        'Failed to load routines: File not found'
+      )
+    })
+  })
 })
