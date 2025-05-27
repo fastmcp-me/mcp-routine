@@ -13,7 +13,7 @@ Copy the following into your MCP client's JSON file
       "command": "npx",
       "args": ["-y", "mcp-routine"],
       "env": {
-        "toolFile": "/path/to/your-tool-file.json"
+        "ROUTINE_FILENAME": "/path/to/your-tool-file.json"
       }
     }
   }

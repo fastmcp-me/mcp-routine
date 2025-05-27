@@ -19,7 +19,7 @@ const server = new McpServer({
   },
 })
 
-const routineFilename = process.env.TOOL_FILENAME ?? join(process.cwd(), "routines.json")
+const routineFilename = process.env.ROUTINE_FILENAME ?? join(process.cwd(), "routines.json")
 
 server.tool(
   "create-routine",
