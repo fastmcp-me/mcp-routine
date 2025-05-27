@@ -45,7 +45,7 @@ export async function createRoutine(args: { routine: Routine, filename: string }
     try {
       const content = await fs.readFile(filename, 'utf-8')
       routines = JSON.parse(content)
-      
+
       // Validate that the loaded content is an array
       if (!Array.isArray(routines)) {
         throw new Error('Existing file content must be an array of routines')
@@ -77,42 +77,50 @@ export async function createRoutine(args: { routine: Routine, filename: string }
 
 export async function loadRoutines(filename: string): Promise<Routine[]> {
   try {
-    // Read and parse the JSON file
-    const fileContent = await fs.readFile(filename, 'utf-8')
-    const data = JSON.parse(fileContent)
+    try {
+      // Read and parse the JSON file
+      const fileContent = await fs.readFile(filename, 'utf-8')
+      const data = JSON.parse(fileContent)
 
-    // Ensure the data is an array
-    if (!Array.isArray(data)) {
-      throw new Error('File content must be an array of routines')
+      // Ensure the data is an array
+      if (!Array.isArray(data)) {
+        throw new Error('File content must be an array of routines')
+      }
+
+      // Validate each routine
+      for (const routine of data) {
+        if (!routine.name || typeof routine.name !== 'string') {
+          throw new Error('Each routine must have a valid name')
+        }
+        if (!routine.description || typeof routine.description !== 'string') {
+          throw new Error('Each routine must have a valid description')
+        }
+        if (!Array.isArray(routine.steps) || routine.steps.length === 0) {
+          throw new Error('Each routine must have at least one step')
+        }
+
+        // Validate each step
+        for (const step of routine.steps) {
+          if (!step.description || typeof step.description !== 'string') {
+            throw new Error('Each step must have a valid description')
+          }
+          if (!step.tool || typeof step.tool !== 'string') {
+            throw new Error('Each step must have a valid tool name')
+          }
+          if (!step.params || typeof step.params !== 'object') {
+            throw new Error('Each step must have valid parameters')
+          }
+        }
+      }
+
+      return data as Routine[]
+    } catch (error) {
+      // If file doesn't exist, return empty array
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return []
+      }
+      throw error
     }
-
-    // Validate each routine
-    for (const routine of data) {
-      if (!routine.name || typeof routine.name !== 'string') {
-        throw new Error('Each routine must have a valid name')
-      }
-      if (!routine.description || typeof routine.description !== 'string') {
-        throw new Error('Each routine must have a valid description')
-      }
-      if (!Array.isArray(routine.steps) || routine.steps.length === 0) {
-        throw new Error('Each routine must have at least one step')
-      }
-
-      // Validate each step
-      for (const step of routine.steps) {
-        if (!step.description || typeof step.description !== 'string') {
-          throw new Error('Each step must have a valid description')
-        }
-        if (!step.tool || typeof step.tool !== 'string') {
-          throw new Error('Each step must have a valid tool name')
-        }
-        if (!step.params || typeof step.params !== 'object') {
-          throw new Error('Each step must have valid parameters')
-        }
-      }
-    }
-
-    return data as Routine[]
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to load routines: ${error.message}`)

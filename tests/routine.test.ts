@@ -124,6 +124,14 @@ describe('Routine functions', () => {
       expect(fs.readFile).toHaveBeenCalledWith(testFilename, 'utf-8')
     })
 
+    it('should return empty array when file does not exist', async () => {
+      (fs.readFile as jest.Mock).mockRejectedValue({ code: 'ENOENT' })
+
+      const result = await loadRoutines(testFilename)
+      expect(result).toEqual([])
+      expect(fs.readFile).toHaveBeenCalledWith(testFilename, 'utf-8')
+    })
+
     it('should throw error if file content is not an array', async () => {
       ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify({}))
 
