@@ -1,0 +1,8 @@
+.cursor/
+node_modules/
+bin/
+build/
+
+.DS_Store
+
+routines.json

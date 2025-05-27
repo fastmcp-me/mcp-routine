@@ -1,0 +1,45 @@
+{
+  "name": "mcp-routine",
+  "keywords": [
+    "routine",
+    "mcp",
+    "server"
+  ],
+  "version": "1.8.1",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -build && node scripts/build-cli.js",
+    "start": "tsx watch src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "bin": {
+    "mcp-routine": "bin/cli.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "express": "^5.1.0",
+    "zod": "3.25.28"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.15.21",
+    "esbuild": "^0.25.4",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "description": "Stitch MCP actions together into reusable routines",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mquan/mcp-routine.git"
+  },
+  "author": "Quan Nguyen",
+  "bugs": {
+    "url": "https://github.com/mquan/mcp-routine/issues"
+  },
+  "homepage": "https://github.com/mquan/mcp-routine#readme"
+}
