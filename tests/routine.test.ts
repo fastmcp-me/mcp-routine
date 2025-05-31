@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs'
-import { createRoutine, loadRoutines, Routine } from '../src/routine'
+import { createRoutine, loadRoutines, deleteRoutine, Routine } from '../src/routine'
 
 // Mock fs module
 jest.mock('fs', () => ({
@@ -163,6 +163,51 @@ describe('Routine functions', () => {
       await expect(loadRoutines(testFilename)).rejects.toThrow(
         'Failed to load routines: File not found'
       )
+    })
+  })
+
+  describe('deleteRoutine', () => {
+    it('should successfully delete a routine', async () => {
+      const existingRoutines = [mockRoutine, {
+        name: 'Another Routine',
+        description: 'Another test routine',
+        steps: [{ description: 'Step 1', tool: 'tool-1', params: {} }]
+      }]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(existingRoutines))
+
+      await deleteRoutine({ name: mockRoutine.name, filename: testFilename })
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        testFilename,
+        JSON.stringify([existingRoutines[1]], null, 2)
+      )
+    })
+
+    it('should throw error if routine does not exist', async () => {
+      const existingRoutines = [mockRoutine]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(existingRoutines))
+
+      await expect(
+        deleteRoutine({ name: 'Non-existent Routine', filename: testFilename })
+      ).rejects.toThrow('Failed to delete routine: No routine found with name "Non-existent Routine"')
+    })
+
+    it('should throw error if file read fails', async () => {
+      ;(fs.readFile as jest.Mock).mockRejectedValue(new Error('Permission denied'))
+
+      await expect(
+        deleteRoutine({ name: mockRoutine.name, filename: testFilename })
+      ).rejects.toThrow('Failed to delete routine: Failed to load routines: Permission denied')
+    })
+
+    it('should throw error if file write fails', async () => {
+      const existingRoutines = [mockRoutine]
+      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(existingRoutines))
+      ;(fs.writeFile as jest.Mock).mockRejectedValue(new Error('Write permission denied'))
+
+      await expect(
+        deleteRoutine({ name: mockRoutine.name, filename: testFilename })
+      ).rejects.toThrow('Failed to delete routine: Write permission denied')
     })
   })
 })

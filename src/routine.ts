@@ -128,3 +128,29 @@ export async function loadRoutines(filename: string): Promise<Routine[]> {
     throw new Error('Failed to load routines: Unknown error')
   }
 }
+
+export async function deleteRoutine(args: { name: string, filename: string }): Promise<void> {
+  const { name, filename } = args
+
+  try {
+    // Load existing routines
+    let routines = await loadRoutines(filename)
+
+    // Find the routine index
+    const routineIndex = routines.findIndex(r => r.name === name)
+    if (routineIndex === -1) {
+      throw new Error(`No routine found with name "${name}"`)
+    }
+
+    // Remove the routine
+    routines.splice(routineIndex, 1)
+
+    // Write back to file
+    await fs.writeFile(filename, JSON.stringify(routines, null, 2))
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to delete routine: ${error.message}`)
+    }
+    throw new Error('Failed to delete routine: Unknown error')
+  }
+}
