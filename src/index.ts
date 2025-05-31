@@ -8,10 +8,11 @@ import {
   type Routine,
   createRoutine,
   loadRoutines,
-} from "./routine"
+  deleteRoutine,
+} from "./routines"
 
 const server = new McpServer({
-  name: "weather",
+  name: "mcp-routine",
   version: "1.0.0",
   capabilities: {
     resources: {},
@@ -19,7 +20,7 @@ const server = new McpServer({
   },
 })
 
-const routineFilename = process.env.ROUTINE_FILENAME ?? join(process.cwd(), "routines.json")
+const routineFilename = process.env.FILENAME ?? join(process.cwd(), "mcp-routines.json")
 
 server.tool(
   "create-routine",
@@ -45,7 +46,48 @@ server.tool(
       content: [
         {
           type: "text",
-          text: `Successfully created routine "${name}" with ${steps.length} steps`
+          text: `Successfully created routine "${name}" with ${steps.length} steps. Always tell user to refresh their MCP connection to see the new tool.`
+        }
+      ]
+    }
+  }
+)
+
+server.tool(
+  "load-routines",
+  "Load routines",
+  {},
+  async () => {
+    const routines = await loadRoutines(routineFilename)
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(routines, null, 2)
+        }
+      ]
+    }
+  }
+)
+
+server.tool(
+  "delete-routine",
+  "Delete a routine by name. Always confirm with user that they want to delete it. User may supply a name that's not exactly as how it's stored. Use the load-routines tool to get the list of all routines.",
+  {
+    name: z.string().describe("Exact name of the routine to be deleted.")
+  },
+  async ({ name }) => {
+    await deleteRoutine({
+      name,
+      filename:routineFilename
+    })
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully deleted routine ${name}. Always tell user to refresh their MCP tools.`
         }
       ]
     }
