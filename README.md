@@ -30,6 +30,15 @@ Copy the following into your MCP client's JSON file
 2. Once the task is completed, instruct AI to create a new routine for your task.
 3. Refresh your MCP client to update the tools. Then use it to execute the same sequence of tools.
 
+The MCP server includes the following tools to manage routines
+
+```
+create-routine
+load-routines
+update-routine
+delete-routine
+```
+
 ### Examples
 
 Research a topic, then write the result into a new page in a given folder.
