@@ -1,4 +1,4 @@
-# Routine
+# MCP Routine
 
 🌅🍳☕️📰🚗💼 Routine is an MCP server that lets you create custom tools on the fly. It stitches actions executed by multiple MCP tools into a reusable routine.
 
@@ -13,7 +13,7 @@ Copy the following into your MCP client's JSON file
       "command": "npx",
       "args": ["-y", "mcp-routine"],
       "env": {
-        "ROUTINE_FILENAME": "/path/to/your/routines.json"
+        "FILENAME": "/path/to/your/mcp-routines.json"
       }
     }
   }

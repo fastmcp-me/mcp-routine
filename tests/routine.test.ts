@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs'
-import { createRoutine, loadRoutines, deleteRoutine, Routine } from '../src/routine'
+import { createRoutine, loadRoutines, deleteRoutine, Routine } from '../src/routines'
 
 // Mock fs module
 jest.mock('fs', () => ({
