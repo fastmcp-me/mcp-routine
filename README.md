@@ -1,10 +1,10 @@
 # MCP Routine
 
-🌅🍳☕️📰🚗💼 Routine is an MCP server that lets you create custom tools on the fly. It stitches actions executed by multiple MCP tools into a reusable routine.
+🌅🍳☕️📰🚗💼 MCP Routine is a MCP server that lets you create custom tools on the fly. It stitches actions executed by multiple MCP tools into a reusable routine.
 
 ### Why?
 
-If you perform the same sequence of tool calls over and over, a routine will save you time and removes prompting inconsistencies. A routine includes full context of the exact set of tools and inputs needed to execute a full task.
+If you perform the same sequence of tool calls over and over, a routine will save you time and remove prompting inconsistencies. A routine includes full context of the exact set of tools and inputs needed to execute a full task.
 
 ### Installation
 
@@ -26,7 +26,7 @@ Copy the following into your MCP client's JSON file
 
 ### How to use it?
 
-1. Perform your task by guiding AI with your prompt to execute tools.
+1. Perform your task by prompting AI to execute tools.
 2. Once the task is completed, instruct AI to create a new routine for your task.
 3. Refresh your MCP client to update the tools. Then use it to execute the same sequence of tools.
 
