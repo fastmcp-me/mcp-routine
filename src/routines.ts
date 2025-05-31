@@ -12,18 +12,18 @@ export type Routine = {
   steps: ToolStep[]
 }
 
-export async function createRoutine(args: { routine: Routine, filename: string }) {
-  const { routine, filename } = args
-
+function validateRoutine(routine: Routine, context: 'write' | 'read' = 'write') {
+  const prefix = context === 'write' ? 'Routine' : 'Each routine'
+  
   // Validate routine structure
   if (!routine.name || typeof routine.name !== 'string') {
-    throw new Error('Routine must have a valid name')
+    throw new Error(`${prefix} must have a valid name`)
   }
   if (!routine.description || typeof routine.description !== 'string') {
-    throw new Error('Routine must have a valid description')
+    throw new Error(`${prefix} must have a valid description`)
   }
   if (!Array.isArray(routine.steps) || routine.steps.length === 0) {
-    throw new Error('Routine must have at least one step')
+    throw new Error(`${prefix} must have at least one step`)
   }
 
   // Validate each step
@@ -38,6 +38,21 @@ export async function createRoutine(args: { routine: Routine, filename: string }
       throw new Error('Each step must have valid parameters')
     }
   }
+}
+
+async function findRoutineIndex(name: string, routines: Routine[]): Promise<number> {
+  const index = routines.findIndex(r => r.name === name)
+  if (index === -1) {
+    throw new Error(`No routine found with name "${name}"`)
+  }
+  return index
+}
+
+export async function createRoutine(args: { routine: Routine, filename: string }) {
+  const { routine, filename } = args
+
+  // Validate routine
+  validateRoutine(routine, 'write')
 
   try {
     // Try to read existing routines
@@ -87,30 +102,16 @@ export async function loadRoutines(filename: string): Promise<Routine[]> {
         throw new Error('File content must be an array of routines')
       }
 
-      // Validate each routine
-      for (const routine of data) {
-        if (!routine.name || typeof routine.name !== 'string') {
-          throw new Error('Each routine must have a valid name')
+      // Type check each routine before validation
+      for (const item of data) {
+        if (typeof item !== 'object' || item === null) {
+          throw new Error('Each item in the array must be an object')
         }
-        if (!routine.description || typeof routine.description !== 'string') {
-          throw new Error('Each routine must have a valid description')
-        }
-        if (!Array.isArray(routine.steps) || routine.steps.length === 0) {
-          throw new Error('Each routine must have at least one step')
-        }
+      }
 
-        // Validate each step
-        for (const step of routine.steps) {
-          if (!step.description || typeof step.description !== 'string') {
-            throw new Error('Each step must have a valid description')
-          }
-          if (!step.tool || typeof step.tool !== 'string') {
-            throw new Error('Each step must have a valid tool name')
-          }
-          if (!step.params || typeof step.params !== 'object') {
-            throw new Error('Each step must have valid parameters')
-          }
-        }
+      // Now validate each routine's structure
+      for (const routine of data) {
+        validateRoutine(routine, 'read')
       }
 
       return data as Routine[]
@@ -136,13 +137,8 @@ export async function deleteRoutine(args: { name: string, filename: string }): P
     // Load existing routines
     let routines = await loadRoutines(filename)
 
-    // Find the routine index
-    const routineIndex = routines.findIndex(r => r.name === name)
-    if (routineIndex === -1) {
-      throw new Error(`No routine found with name "${name}"`)
-    }
-
-    // Remove the routine
+    // Find and remove the routine
+    const routineIndex = await findRoutineIndex(name, routines)
     routines.splice(routineIndex, 1)
 
     // Write back to file
@@ -152,5 +148,29 @@ export async function deleteRoutine(args: { name: string, filename: string }): P
       throw new Error(`Failed to delete routine: ${error.message}`)
     }
     throw new Error('Failed to delete routine: Unknown error')
+  }
+}
+
+export async function updateRoutine(args: { routine: Routine, filename: string }): Promise<void> {
+  const { routine, filename } = args
+
+  // Validate routine
+  validateRoutine(routine, 'write')
+
+  try {
+    // Load existing routines
+    let routines = await loadRoutines(filename)
+
+    // Find and update the routine
+    const routineIndex = await findRoutineIndex(routine.name, routines)
+    routines[routineIndex] = routine
+
+    // Write back to file
+    await fs.writeFile(filename, JSON.stringify(routines, null, 2))
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to update routine: ${error.message}`)
+    }
+    throw new Error('Failed to update routine: Unknown error')
   }
 }

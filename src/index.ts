@@ -9,6 +9,7 @@ import {
   createRoutine,
   loadRoutines,
   deleteRoutine,
+  updateRoutine,
 } from "./routines"
 
 const server = new McpServer({
@@ -65,6 +66,37 @@ server.tool(
         {
           type: "text",
           text: JSON.stringify(routines, null, 2)
+        }
+      ]
+    }
+  }
+)
+
+server.tool(
+  "update-routine",
+  "Update a routine by name. Factor in the existing schema and update only the portion specified by the user. Always confirm with user that they want to update it. User may supply a name that's not exactly as how it's stored. Use the load-routines tool to get the list of all routines.",
+  {
+    name: z.string().describe("Exact name of the routine to be updated."),
+    description: z.string().describe("Description of the routine."),
+    steps: z.array(
+      z.object({
+        description: z.string().describe("Description of the step to help the LLM understand the purpose of the tool call"),
+        tool: z.string().describe("The tool used with name, input schema used"),
+        params: z.object({}).passthrough().describe("Parameters used to call the tool, based on the context some of these should be swapped out with dynamic values"),
+      })
+    ).describe("Steps of the routine."),
+  },
+  async ({ name, description, steps }) => {
+    await updateRoutine({
+      filename: routineFilename,
+      routine: { name, description, steps },
+    })
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully updated routine ${name}. Always tell user to refresh their MCP tools.`
         }
       ]
     }
