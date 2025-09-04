@@ -1,3 +1,8 @@
+[![Add to Cursor](https://fastmcp.me/badges/cursor_dark.svg)](https://fastmcp.me/MCP/Details/829/routine)
+[![Add to VS Code](https://fastmcp.me/badges/vscode_dark.svg)](https://fastmcp.me/MCP/Details/829/routine)
+[![Add to Claude](https://fastmcp.me/badges/claude_dark.svg)](https://fastmcp.me/MCP/Details/829/routine)
+[![Add to ChatGPT](https://fastmcp.me/badges/chatgpt_dark.svg)](https://fastmcp.me/MCP/Details/829/routine)
+
 # MCP Routine
 
 🌅🍳☕️📰🚗💼 MCP Routine is a MCP server that lets you create custom tools on the fly. It stitches actions executed by multiple MCP tools into a reusable routine.
